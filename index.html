@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Taboola Brand Architecture</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#090f19;}
+
+/* ── Entry Screen ── */
+#entry{position:fixed;inset:0;z-index:10000;background:#050a14;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s ease,visibility .8s ease;}
+#entry.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+
+/* Aurora / dark veil animated background */
+#entry-bg{position:absolute;inset:0;overflow:hidden;}
+#entry-bg::before,#entry-bg::after{content:'';position:absolute;border-radius:50%;filter:blur(120px);opacity:.35;animation:aurora 8s ease-in-out infinite alternate;}
+#entry-bg::before{width:600px;height:600px;background:radial-gradient(circle,#1a3a8f,#0d1b3e 70%,transparent);top:-10%;left:10%;animation-name:aurora1;}
+#entry-bg::after{width:500px;height:500px;background:radial-gradient(circle,#2c1b6e,#0f0a2a 70%,transparent);bottom:-5%;right:5%;animation-name:aurora2;}
+.veil-orb{position:absolute;border-radius:50%;filter:blur(100px);opacity:.2;}
+.veil-orb:nth-child(1){width:400px;height:400px;background:#1e3a7a;top:20%;left:50%;animation:aurora3 10s ease-in-out infinite alternate;}
+.veil-orb:nth-child(2){width:350px;height:350px;background:#3b1d6e;top:60%;left:20%;animation:aurora4 12s ease-in-out infinite alternate;}
+.veil-orb:nth-child(3){width:300px;height:300px;background:#0c2d5e;top:10%;right:20%;animation:aurora5 9s ease-in-out infinite alternate;}
+
+@keyframes aurora1{0%{transform:translate(0,0) scale(1);}100%{transform:translate(80px,60px) scale(1.2);}}
+@keyframes aurora2{0%{transform:translate(0,0) scale(1);}100%{transform:translate(-60px,-40px) scale(1.15);}}
+@keyframes aurora3{0%{transform:translate(0,0) scale(1);}100%{transform:translate(-100px,50px) scale(1.3);}}
+@keyframes aurora4{0%{transform:translate(0,0) scale(1);}100%{transform:translate(70px,-60px) scale(1.2);}}
+@keyframes aurora5{0%{transform:translate(0,0) scale(1);}100%{transform:translate(40px,80px) scale(1.1);}}
+
+/* Noise/grain overlay */
+#entry-bg .grain{position:absolute;inset:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:128px 128px;}
+
+/* Vignette */
+#entry-bg .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 40%,#050a14 100%);}
+
+#entry-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:32px;opacity:0;animation:entryFadeIn 1.2s ease .3s forwards;}
+@keyframes entryFadeIn{to{opacity:1;}}
+#entry-logo{width:140px;height:35px;}
+#entry-title{font-family:'Poppins',sans-serif;font-weight:300;font-size:clamp(28px,4vw,48px);color:#fff;text-align:center;letter-spacing:-.02em;line-height:1.2;}
+#entry-btn{font-family:'Poppins',sans-serif;font-weight:600;font-size:16px;color:#fff;background:transparent;border:1.5px solid rgba(255,255,255,.25);padding:14px 40px;border-radius:80px;cursor:pointer;transition:all .3s ease;letter-spacing:.02em;margin-top:8px;}
+#entry-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.5);transform:scale(1.03);}
+
+/*
+  Pure CSS centering:
+  - position:fixed; left:50%; top:50%  →  top-left corner at screen centre
+  - transform-origin: 0 0  →  all transforms relative to that top-left corner
+  - translate(-864px, -558.5px)  →  shifts so canvas CENTRE lands at screen centre
+    (864 = half of 1728,  558.5 = half of 1117)
+  - scale(s)  →  JS appends this, but centre stays at screen centre because
+    we already translated before scaling
+
+  Written as CSS custom property so JS only touches --s
+*/
+#C{
+  position:fixed;
+  left:0;
+  top:0;
+  width:1728px;
+  height:1117px;
+  transform-origin:0 0;
+  --s:1;
+  --tx:0;
+  --ty:0;
+  transform:translate(var(--tx),var(--ty)) scale(var(--s));
+}
+
+#bg-l{position:absolute;top:0;left:0;width:864px;height:1117px;background:#090f19;}
+#bg-r{position:absolute;top:0;left:864px;width:864px;height:1117px;background:#090f19;}
+#center-line{position:absolute;left:50%;top:77px;width:2px;height:885px;background:#042651;transform:translateX(-50%);z-index:0;}
+#SV{position:absolute;inset:0;width:1728px;height:1117px;z-index:1;pointer-events:none;}
+.N{position:absolute;z-index:2;font-family:'Poppins',sans-serif;font-weight:600;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.75)}to{opacity:1;transform:scale(1)}}
+@keyframes slideL{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideR{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes march{to{stroke-dashoffset:-40}}
+@keyframes pulse-glow{
+  0%,100%{box-shadow:0 0 8px 2px rgba(23,82,157,.15),0 0 20px 4px rgba(23,82,157,.08);}
+  50%    {box-shadow:0 0 14px 4px rgba(23,82,157,.3),0 0 36px 10px rgba(23,82,157,.15);}
+}
+#moat-svg{position:absolute;inset:-2px;width:calc(100% + 4px);height:calc(100% + 4px);pointer-events:none;overflow:visible;}
+#moat-svg rect{
+  fill:none;stroke:#17529d;stroke-width:1;
+  stroke-dasharray:14 6;stroke-dashoffset:0;
+  animation:march .55s linear infinite;
+}
+#moat{
+  position:absolute;
+  background:#090f19;
+  animation: pulse-glow 3s ease-in-out infinite, fadeUp .55s cubic-bezier(.22,1,.36,1) forwards;
+  animation-delay: 1.1s, 1.1s;
+}
+.au{opacity:0;animation:fadeUp .55s cubic-bezier(.22,1,.36,1) forwards;}
+#realize-modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;}
+#realize-modal.open{display:flex;}
+#realize-modal-bg{position:absolute;inset:0;background:rgba(4,12,30,.75);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);cursor:pointer;}
+#realize-modal-img{position:relative;max-width:85vw;max-height:85vh;opacity:0;transform:scale(.92);transition:opacity .3s ease,transform .3s ease;}
+#realize-modal.open #realize-modal-img{opacity:1;transform:scale(1);}
+.ap{opacity:0;animation:popIn .5s cubic-bezier(.34,1.56,.64,1) forwards;}
+.al{opacity:0;animation:slideL .5s cubic-bezier(.22,1,.36,1) forwards;}
+.ar{opacity:0;animation:slideR .5s cubic-bezier(.22,1,.36,1) forwards;}
+.ln{stroke-dasharray:1000;stroke-dashoffset:1000;animation:draw .8s cubic-bezier(.4,0,.2,1) forwards;}
+/* Pause all chart animations until entry screen dismissed */
+.au,.ap,.al,.ar,.ln{animation-play-state:paused;}
+#C.animate .au,#C.animate .ap,#C.animate .al,#C.animate .ar,#C.animate .ln{animation-play-state:running;}
+/* Also pause/unpause the moat */
+#moat{animation-play-state:paused;}
+#C.animate #moat{animation-play-state:running;}
+</style>
+</head>
+<body>
+
+<!-- Entry Screen -->
+<div id="entry">
+  <div id="entry-bg">
+    <div class="veil-orb"></div>
+    <div class="veil-orb"></div>
+    <div class="veil-orb"></div>
+    <div class="grain"></div>
+    <div class="vignette"></div>
+  </div>
+  <div id="entry-content">
+    <img id="entry-logo" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTIiIGhlaWdodD0iMjMiIHZpZXdCb3g9IjAgMCA5MiAyMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgY2xpcC1wYXRoPSJ1cmwoI2NsaXAwXzg5XzExMykiPgo8cGF0aCBkPSJNNS4zNzg2MSA1LjA5Nzk5SDBWMC4wMzE1MjQ3SDE2LjY2MTNWNS4wOTc5OUgxMS4yNzY0TDExLjI3ODkgMTkuOTQ1NEg1LjM4MjQyTDUuMzc4NjEgNS4wOTc5OVoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0yMS41NjggMTMuNDM4M0MyMC45MjAzIDEzLjc2OCAyMC4xOTEyIDEzLjk1ODQgMTkuNDY1OSAxNC4xMjEyQzE4LjI3ODcgMTQuMzkzMSAxNy42NTc4IDE0LjY5MzggMTcuNjUzOSAxNS42NjU2QzE3LjY1MDEgMTYuMzM0IDE4LjM0NjEgMTcuMDAzOCAxOS4zMTQ1IDE3LjAxMDNDMjAuNTI1OCAxNy4wMTY5IDIxLjQ3MTMgMTYuMjczNiAyMS41NjE2IDE0Ljc3MjZMMjEuNTY4IDEzLjQzODNaTTI2LjY2NTQgMTYuNzIxNEMyNi42NTc3IDE3LjgwNDggMjYuNzA0OCAxOS4wMjc1IDI3LjI5MTQgMTkuOTQ4TDIxLjg1NDMgMTkuOTE1MkMyMS43MjE5IDE5LjUyNTIgMjEuNjQ0MyAxOC45NDA4IDIxLjY3NDggMTguNTUzNEgyMS42MjAxQzIwLjQ4MjYgMTkuODc5NyAxOC44Mzg2IDIwLjI1OCAxNy4xMTQ0IDIwLjI0ODhDMTQuNDIzMiAyMC4yMzE3IDEyLjE5NjQgMTguODg1NiAxMi4yMTMgMTUuODU3M0MxMi4yMzk3IDExLjMwMDQgMTcuNDA4NCAxMS40OTg3IDIwLjEyODggMTAuOTg3OEMyMC44NTY3IDEwLjg1MjYgMjEuNTg0NSAxMC42MzQ2IDIxLjU4ODMgOS43MTc5NEMyMS41OTQ3IDguNzQ0ODMgMjAuNzA5MSA4LjM3NzEyIDE5Ljg0NzYgOC4zNzMxOEMxOC4yMDYyIDguMzY1MyAxNy44NzY2IDkuMjIyODUgMTcuODQ3MyA5LjgzMzVMMTIuODkzNyA5LjgwNDYxQzEzLjA3NyA1Ljc0OTM0IDE2Ljc5NSA1LjEwNDU0IDIwLjEwNzIgNS4xMjQyNEMyNi43ODI0IDUuMTY0OTUgMjYuNzEzNyA4LjAyNjQ5IDI2LjY5NTkgMTAuODA0TDI2LjY2NTQgMTYuNzIxNFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0zNC44ODEzIDkuMjEzNjZDMzIuOTcgOS4yMDE4NCAzMi41Mjk4IDExLjA2MTQgMzIuNTE5NiAxMi43NTQxQzMyLjUwOTQgMTQuNDc1OCAzMi45MzA2IDE2LjM0MTkgMzQuODQwNSAxNi4zNTM3QzM2Ljc1MyAxNi4zNjQyIDM3LjE5MzMgMTQuNTA2IDM3LjIwMzUgMTIuNzgxN0MzNy4yMTM2IDExLjA4OSAzNi43OTI1IDkuMjIyODUgMzQuODgxMyA5LjIxMzY2Wk0yNy40NTAyIDBIMzIuNzc5MkwzMi43NDEgNy4xNDUzMUgzMi43OTQ0QzMzLjYwODggNS45Mjc5NCAzNS4wMzkgNS4yMTM1NCAzNi42MjgzIDUuMjIyNzRDNDEuMzEwOSA1LjI1MTYzIDQyLjU1MjggOS4zNjk5MyA0Mi41MzM3IDEyLjc2MDdDNDIuNTEzMyAxNi4zNzIxIDQwLjU3OTIgMjAuMzg4IDM2LjYyMzIgMjAuMzY1NkMzNC4wMTIyIDIwLjM0ODYgMzMuMjEwNSAxOS4zMTY0IDMyLjU0MjUgMTguMzk0NUgzMi40ODkxTDMyLjQ3ODkgMTkuOTQ1NEgyNy40NTAyVjBaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNTAuMDEzMiA0LjAzNTU3QzQ3Ljk5MzggNC4wMjI0NCA0Ny43MTI2IDYuMDUwMDcgNDcuNzAzNyA3LjU3NzM3QzQ3LjY5NiA5LjEwNDY2IDQ3Ljk1MzEgMTEuMTYzOCA0OS45NzEyIDExLjE3NTZDNTEuOTg5MyAxMS4xODc0IDUyLjI3MTcgOS4xMzM1NSA1Mi4yODA2IDcuNjAzNjNDNTIuMjg5NiA2LjA3NjM0IDUyLjAzMTIgNC4wNDczOSA1MC4wMTMyIDQuMDM1NTdaTTQ5Ljk0OTUgMTUuMTc1N0M0NC42OTk0IDE1LjE0NDIgNDIuMzUwNSAxMS41NDYgNDIuMzc0NyA3LjU0NTg1QzQyLjM5NzYgMy41NDQ0MiA0NC43ODQ3IDAuMDAzOTQwNDYgNTAuMDM0OCAwLjAzNjc3MTNDNTUuMjg0OSAwLjA2Njk3NTcgNTcuNjMzOCAzLjYzNjM1IDU3LjYxMDkgNy42Mzc3OEM1Ny41ODY3IDExLjYzNjYgNTUuMTk5NiAxNS4yMDczIDQ5Ljk0OTUgMTUuMTc1N1oiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik02My4yNDA0IDQuMDM0MjZDNjEuMjIyMyA0LjAyMTEzIDYwLjk0MTEgNi4wNDg3NiA2MC45MzM1IDcuNTc3MzdDNjAuOTIzMyA5LjEwNDY2IDYxLjE4MTYgMTEuMTYyNSA2My4yMDEgMTEuMTc0M0M2NS4yMTc4IDExLjE4NzUgNjUuNTAwMyA5LjEzMjI0IDY1LjUwOTIgNy42MDM2M0M2NS41MTY4IDYuMDc2MzQgNjUuMjU4NSA0LjA0NjA4IDYzLjI0MDQgNC4wMzQyNlpNNjMuMTc2OCAxNS4xNzU3QzU3LjkyOCAxNS4xNDI5IDU1LjU3OSAxMS41NDQ3IDU1LjYwMzIgNy41NDQ1NEM1NS42MjQ4IDMuNTQ0NDIgNTguMDEzMiAwLjAwMjYyNjY3IDYzLjI2MiAwLjAzNDE0NDNDNjguNTEwOCAwLjA2NTY2MiA3MC44NTk4IDMuNjM1MDQgNzAuODM4MSA3LjYzNTE1QzcwLjgxNTIgMTEuNjM3OSA2OC40MjY5IDE1LjIwNiA2My4xNzY4IDE1LjE3NTdaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNzEuNDEzMSAwLjAzNTQ2MTRINzYuNjMwMVYxOS45NDU0SDcxLjQxMzFWMC4wMzU0NjE0WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTg2LjM0NDEgMTMuMzkxMUM4NS42OTY0IDEzLjcxOTQgODQuOTY3MyAxMy45MDk4IDg0LjI0MiAxNC4wNzEzQzgzLjA1MzUgMTQuMzQzMiA4Mi40MzUxIDE0LjY0NTIgODIuNDI4OCAxNS42MTdDODIuNDI0OSAxNi4yODQxIDgzLjEyMSAxNi45NTM5IDg0LjA4OTMgMTYuOTYwNEM4NS4zMDE5IDE2Ljk2NyA4Ni4yNDczIDE2LjIyMzcgODYuMzM2NCAxNC43MjI3TDg2LjM0NDEgMTMuMzkxMVpNOTEuNDc0NSAxNi42NzAyQzkxLjQ2OTQgMTcuNzUzNiA5MS40MTA5IDE5LjAyNDggOTEuOTk4OCAxOS45NDU0SDg2LjY0MThDODYuNTEwNyAxOS41NTU0IDg2LjQyMDQgMTguODkwOSA4Ni40NTA5IDE4LjUwMzVMODYuMzk2MiAxOC41MDIyQzg1LjI1ODcgMTkuODI4NSA4My42MTU5IDIwLjIwODEgODEuODkxOCAyMC4xOTc2Qzc5LjE5OTMgMjAuMTc5MiA3Ni45NzI1IDE4LjgzMzEgNzYuOTkwMyAxNS44MDQ4Qzc3LjAxNzEgMTEuMjQ3OSA4Mi4xODMyIDExLjQ0NzUgODQuOTA0OSAxMC45MzY2Qzg1LjYzMjggMTAuODAxNCA4Ni4zNjA2IDEwLjU4MzQgODYuMzY1NyA5LjY2NjcyQzg2LjM3MiA4LjY5MzYxIDg1LjQ4NjQgOC4zMjcyMiA4NC42MjM3IDguMzIxOTdDODIuOTgxIDguMzEyNzggODIuNjU0IDkuMTcxNjMgODIuNjI0NyA5Ljc4MjI5TDc3LjY2ODYgOS43NTQ3MUM3Ny44NTMxIDUuNjk5NDQgODEuNTcyNCA1LjA1MzMzIDg0Ljg4MzMgNS4wNzU2NUM5MS41NTg1IDUuMTEzNzMgOTEuNDg5OCA3Ljk3NjU5IDkxLjQ3MzMgMTAuNzU0MVYxNi42NzAySDkxLjQ3NDVaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNDQuMzczNyAxNS4xNzcxQzQ4LjE1NzkgMTYuOTIyNCA1Mi4wODQ3IDE3LjY5NzIgNTYuMzYzOSAxNy43MjIxQzYwLjg1OTQgMTcuNzQ5NyA2NC4yNjgzIDE2Ljg3MzggNjguNTgzMSAxNS4xNzcxTDY4LjU1NzcgMTkuOTgzNUM2NC42OTU4IDIxLjk1OTkgNjAuNTA3IDIzLjAyNjMgNTYuMzMzNCAyMy4wMDEzQzUxLjc4NDQgMjIuOTczNyA0OC41MDY2IDIyLjAwOTggNDQuMzQ1NyAxOS45ODM1TDQ0LjM3MzcgMTUuMTc3MVoiIGZpbGw9IndoaXRlIi8+CjwvZz4KPGRlZnM+CjxjbGlwUGF0aCBpZD0iY2xpcDBfODlfMTEzIj4KPHJlY3Qgd2lkdGg9IjkyIiBoZWlnaHQ9IjIzIiBmaWxsPSJ3aGl0ZSIvPgo8L2NsaXBQYXRoPgo8L2RlZnM+Cjwvc3ZnPgo=" alt="Taboola"/>
+    <h1 id="entry-title">Taboola Brand Hierarchy</h1>
+    <button id="entry-btn" onclick="enterChart()">View Hierarchy</button>
+  </div>
+</div>
+
+<div id="C">
+<div id="bg-l"></div><div id="bg-r"></div>
+<div id="center-line"></div>
+
+<svg id="SV" viewBox="0 0 1728 1117">
+  <path class="ln" style="animation-delay:.36s" d="M864,129 C864,195 572,175 572,229" fill="none" stroke="#042651" stroke-width="1.5"/>
+  <line class="ln" style="animation-delay:.38s" x1="240" y1="257" x2="423" y2="257" stroke="#042651" stroke-width="1.5"/>
+  <path class="ln" style="animation-delay:.42s" d="M864,129 C864,195 1058,175 1058,229" fill="none" stroke="#003D31" stroke-width="1.5"/>
+  <path class="ln" style="animation-delay:.47s" d="M864,129 C864,180 1327,168 1327,229" fill="none" stroke="#003D31" stroke-width="1.5"/>
+  <path class="ln" style="animation-delay:.52s" d="M864,129 C864,180 1546,168 1546,229" fill="none" stroke="#003D31" stroke-width="1.5"/>
+  <line class="ln" style="animation-delay:.56s" x1="171" y1="271" x2="171" y2="320" stroke="#042651" stroke-width="1.5"/>
+</svg>
+
+<!-- PUBLISHERS: Figma x=394, y=39 -->
+<p class="N al" style="animation-delay:.16s;top:39px;left:394px;font-size:12px;color:#6880ff;text-transform:uppercase;letter-spacing:.15em;white-space:nowrap;">publishers</p>
+
+<!-- ADVERTISERS: Figma x=1255, y=39 -->
+<p class="N ar" style="animation-delay:.16s;top:39px;left:1255px;font-size:12px;color:#008f72;text-transform:uppercase;letter-spacing:.15em;white-space:nowrap;">Advertisers</p>
+
+<!-- TABOOLA: Figma x=753, y=77, w=222, h=53 -->
+<div class="N ap" style="animation-delay:0s;top:77px;left:753px;width:222px;height:53px;background:#042651;border-radius:80px;display:flex;align-items:center;justify-content:center;">
+  <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTIiIGhlaWdodD0iMjMiIHZpZXdCb3g9IjAgMCA5MiAyMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgY2xpcC1wYXRoPSJ1cmwoI2NsaXAwXzg5XzExMykiPgo8cGF0aCBkPSJNNS4zNzg2MSA1LjA5Nzk5SDBWMC4wMzE1MjQ3SDE2LjY2MTNWNS4wOTc5OUgxMS4yNzY0TDExLjI3ODkgMTkuOTQ1NEg1LjM4MjQyTDUuMzc4NjEgNS4wOTc5OVoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0yMS41NjggMTMuNDM4M0MyMC45MjAzIDEzLjc2OCAyMC4xOTEyIDEzLjk1ODQgMTkuNDY1OSAxNC4xMjEyQzE4LjI3ODcgMTQuMzkzMSAxNy42NTc4IDE0LjY5MzggMTcuNjUzOSAxNS42NjU2QzE3LjY1MDEgMTYuMzM0IDE4LjM0NjEgMTcuMDAzOCAxOS4zMTQ1IDE3LjAxMDNDMjAuNTI1OCAxNy4wMTY5IDIxLjQ3MTMgMTYuMjczNiAyMS41NjE2IDE0Ljc3MjZMMjEuNTY4IDEzLjQzODNaTTI2LjY2NTQgMTYuNzIxNEMyNi42NTc3IDE3LjgwNDggMjYuNzA0OCAxOS4wMjc1IDI3LjI5MTQgMTkuOTQ4TDIxLjg1NDMgMTkuOTE1MkMyMS43MjE5IDE5LjUyNTIgMjEuNjQ0MyAxOC45NDA4IDIxLjY3NDggMTguNTUzNEgyMS42MjAxQzIwLjQ4MjYgMTkuODc5NyAxOC44Mzg2IDIwLjI1OCAxNy4xMTQ0IDIwLjI0ODhDMTQuNDIzMiAyMC4yMzE3IDEyLjE5NjQgMTguODg1NiAxMi4yMTMgMTUuODU3M0MxMi4yMzk3IDExLjMwMDQgMTcuNDA4NCAxMS40OTg3IDIwLjEyODggMTAuOTg3OEMyMC44NTY3IDEwLjg1MjYgMjEuNTg0NSAxMC42MzQ2IDIxLjU4ODMgOS43MTc5NEMyMS41OTQ3IDguNzQ0ODMgMjAuNzA5MSA4LjM3NzEyIDE5Ljg0NzYgOC4zNzMxOEMxOC4yMDYyIDguMzY1MyAxNy44NzY2IDkuMjIyODUgMTcuODQ3MyA5LjgzMzVMMTIuODkzNyA5LjgwNDYxQzEzLjA3NyA1Ljc0OTM0IDE2Ljc5NSA1LjEwNDU0IDIwLjEwNzIgNS4xMjQyNEMyNi43ODI0IDUuMTY0OTUgMjYuNzEzNyA4LjAyNjQ5IDI2LjY5NTkgMTAuODA0TDI2LjY2NTQgMTYuNzIxNFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0zNC44ODEzIDkuMjEzNjZDMzIuOTcgOS4yMDE4NCAzMi41Mjk4IDExLjA2MTQgMzIuNTE5NiAxMi43NTQxQzMyLjUwOTQgMTQuNDc1OCAzMi45MzA2IDE2LjM0MTkgMzQuODQwNSAxNi4zNTM3QzM2Ljc1MyAxNi4zNjQyIDM3LjE5MzMgMTQuNTA2IDM3LjIwMzUgMTIuNzgxN0MzNy4yMTM2IDExLjA4OSAzNi43OTI1IDkuMjIyODUgMzQuODgxMyA5LjIxMzY2Wk0yNy40NTAyIDBIMzIuNzc5MkwzMi43NDEgNy4xNDUzMUgzMi43OTQ0QzMzLjYwODggNS45Mjc5NCAzNS4wMzkgNS4yMTM1NCAzNi42MjgzIDUuMjIyNzRDNDEuMzEwOSA1LjI1MTYzIDQyLjU1MjggOS4zNjk5MyA0Mi41MzM3IDEyLjc2MDdDNDIuNTEzMyAxNi4zNzIxIDQwLjU3OTIgMjAuMzg4IDM2LjYyMzIgMjAuMzY1NkMzNC4wMTIyIDIwLjM0ODYgMzMuMjEwNSAxOS4zMTY0IDMyLjU0MjUgMTguMzk0NUgzMi40ODkxTDMyLjQ3ODkgMTkuOTQ1NEgyNy40NTAyVjBaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNTAuMDEzMiA0LjAzNTU3QzQ3Ljk5MzggNC4wMjI0NCA0Ny43MTI2IDYuMDUwMDcgNDcuNzAzNyA3LjU3NzM3QzQ3LjY5NiA5LjEwNDY2IDQ3Ljk1MzEgMTEuMTYzOCA0OS45NzEyIDExLjE3NTZDNTEuOTg5MyAxMS4xODc0IDUyLjI3MTcgOS4xMzM1NSA1Mi4yODA2IDcuNjAzNjNDNTIuMjg5NiA2LjA3NjM0IDUyLjAzMTIgNC4wNDczOSA1MC4wMTMyIDQuMDM1NTdaTTQ5Ljk0OTUgMTUuMTc1N0M0NC42OTk0IDE1LjE0NDIgNDIuMzUwNSAxMS41NDYgNDIuMzc0NyA3LjU0NTg1QzQyLjM5NzYgMy41NDQ0MiA0NC43ODQ3IDAuMDAzOTQwNDYgNTAuMDM0OCAwLjAzNjc3MTNDNTUuMjg0OSAwLjA2Njk3NTcgNTcuNjMzOCAzLjYzNjM1IDU3LjYxMDkgNy42Mzc3OEM1Ny41ODY3IDExLjYzNjYgNTUuMTk5NiAxNS4yMDczIDQ5Ljk0OTUgMTUuMTc1N1oiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik02My4yNDA0IDQuMDM0MjZDNjEuMjIyMyA0LjAyMTEzIDYwLjk0MTEgNi4wNDg3NiA2MC45MzM1IDcuNTc3MzdDNjAuOTIzMyA5LjEwNDY2IDYxLjE4MTYgMTEuMTYyNSA2My4yMDEgMTEuMTc0M0M2NS4yMTc4IDExLjE4NzUgNjUuNTAwMyA5LjEzMjI0IDY1LjUwOTIgNy42MDM2M0M2NS41MTY4IDYuMDc2MzQgNjUuMjU4NSA0LjA0NjA4IDYzLjI0MDQgNC4wMzQyNlpNNjMuMTc2OCAxNS4xNzU3QzU3LjkyOCAxNS4xNDI5IDU1LjU3OSAxMS41NDQ3IDU1LjYwMzIgNy41NDQ1NEM1NS42MjQ4IDMuNTQ0NDIgNTguMDEzMiAwLjAwMjYyNjY3IDYzLjI2MiAwLjAzNDE0NDNDNjguNTEwOCAwLjA2NTY2MiA3MC44NTk4IDMuNjM1MDQgNzAuODM4MSA3LjYzNTE1QzcwLjgxNTIgMTEuNjM3OSA2OC40MjY5IDE1LjIwNiA2My4xNzY4IDE1LjE3NTdaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNzEuNDEzMSAwLjAzNTQ2MTRINzYuNjMwMVYxOS45NDU0SDcxLjQxMzFWMC4wMzU0NjE0WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTg2LjM0NDEgMTMuMzkxMUM4NS42OTY0IDEzLjcxOTQgODQuOTY3MyAxMy45MDk4IDg0LjI0MiAxNC4wNzEzQzgzLjA1MzUgMTQuMzQzMiA4Mi40MzUxIDE0LjY0NTIgODIuNDI4OCAxNS42MTdDODIuNDI0OSAxNi4yODQxIDgzLjEyMSAxNi45NTM5IDg0LjA4OTMgMTYuOTYwNEM4NS4zMDE5IDE2Ljk2NyA4Ni4yNDczIDE2LjIyMzcgODYuMzM2NCAxNC43MjI3TDg2LjM0NDEgMTMuMzkxMVpNOTEuNDc0NSAxNi42NzAyQzkxLjQ2OTQgMTcuNzUzNiA5MS40MTA5IDE5LjAyNDggOTEuOTk4OCAxOS45NDU0SDg2LjY0MThDODYuNTEwNyAxOS41NTU0IDg2LjQyMDQgMTguODkwOSA4Ni40NTA5IDE4LjUwMzVMODYuMzk2MiAxOC41MDIyQzg1LjI1ODcgMTkuODI4NSA4My42MTU5IDIwLjIwODEgODEuODkxOCAyMC4xOTc2Qzc5LjE5OTMgMjAuMTc5MiA3Ni45NzI1IDE4LjgzMzEgNzYuOTkwMyAxNS44MDQ4Qzc3LjAxNzEgMTEuMjQ3OSA4Mi4xODMyIDExLjQ0NzUgODQuOTA0OSAxMC45MzY2Qzg1LjYzMjggMTAuODAxNCA4Ni4zNjA2IDEwLjU4MzQgODYuMzY1NyA5LjY2NjcyQzg2LjM3MiA4LjY5MzYxIDg1LjQ4NjQgOC4zMjcyMiA4NC42MjM3IDguMzIxOTdDODIuOTgxIDguMzEyNzggODIuNjU0IDkuMTcxNjMgODIuNjI0NyA5Ljc4MjI5TDc3LjY2ODYgOS43NTQ3MUM3Ny44NTMxIDUuNjk5NDQgODEuNTcyNCA1LjA1MzMzIDg0Ljg4MzMgNS4wNzU2NUM5MS41NTg1IDUuMTEzNzMgOTEuNDg5OCA3Ljk3NjU5IDkxLjQ3MzMgMTAuNzU0MVYxNi42NzAySDkxLjQ3NDVaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNDQuMzczNyAxNS4xNzcxQzQ4LjE1NzkgMTYuOTIyNCA1Mi4wODQ3IDE3LjY5NzIgNTYuMzYzOSAxNy43MjIxQzYwLjg1OTQgMTcuNzQ5NyA2NC4yNjgzIDE2Ljg3MzggNjguNTgzMSAxNS4xNzcxTDY4LjU1NzcgMTkuOTgzNUM2NC42OTU4IDIxLjk1OTkgNjAuNTA3IDIzLjAyNjMgNTYuMzMzNCAyMy4wMDEzQzUxLjc4NDQgMjIuOTczNyA0OC41MDY2IDIyLjAwOTggNDQuMzQ1NyAxOS45ODM1TDQ0LjM3MzcgMTUuMTc3MVoiIGZpbGw9IndoaXRlIi8+CjwvZz4KPGRlZnM+CjxjbGlwUGF0aCBpZD0iY2xpcDBfODlfMTEzIj4KPHJlY3Qgd2lkdGg9IjkyIiBoZWlnaHQ9IjIzIiBmaWxsPSJ3aGl0ZSIvPgo8L2NsaXBQYXRoPgo8L2RlZnM+Cjwvc3ZnPgo=" style="width:92px;height:23px;display:block;" alt="Taboola"/>
+</div>
+
+<!-- DESIGN SYSTEM: Figma x=103.5, y=241, w=136, h=32 -->
+<div class="N au" style="animation-delay:.48s;top:241px;left:103.5px;width:136px;height:32px;background:#090f19;border:1px solid #c9ff5c;border-radius:80px;display:flex;align-items:center;justify-content:center;">
+  <span style="font-size:12px;color:#c9ff5c;white-space:nowrap;">Design System</span>
+</div>
+
+<!-- DEEPERDIVE: Figma x=45, y=320, w=252, h=85 -->
+<div class="N au" style="animation-delay:.56s;top:320px;left:45px;width:252px;display:flex;flex-direction:column;">
+  <div style="background:#042651;height:53px;border-radius:24px 24px 0 0;display:flex;align-items:center;justify-content:center;"><span style="font-size:16px;color:#fff;white-space:nowrap;">DeeperDive</span></div>
+  <div style="background:#090f19;border:1px solid #042651;height:32px;border-radius:0 0 20px 20px;display:flex;align-items:center;justify-content:center;"><span style="font-size:12px;color:#78aced;white-space:nowrap;">Endorsed Brand</span></div>
+</div>
+
+<!-- PUBLISHER COL: Figma x=423, y=229, w=297 -->
+<div class="N au" style="animation-delay:.62s;top:229px;left:423px;width:297px;display:flex;flex-direction:column;position:relative;">
+  <div style="background:#042651;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Taboola Publisher solutions</span></div>
+  <!-- Toggle button -->
+  <div id="pub-toggle" onclick="togglePublisher()" style="display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;margin-top:8px;">
+    <div id="pub-circle" style="width:24px;height:24px;border-radius:50%;border:1.5px solid #6880ff;display:flex;align-items:center;justify-content:center;transition:transform .35s cubic-bezier(.34,1.56,.64,1),border-color .25s;">
+      <svg id="pub-plus" width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="8" y1="3" x2="8" y2="13" stroke="#6880ff" stroke-width="1.8" stroke-linecap="round"/><line x1="3" y1="8" x2="13" y2="8" stroke="#6880ff" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+  <!-- Expanding publisher pills (absolute overlay) -->
+  <div id="pub-expand" style="position:absolute;top:93px;left:0;width:297px;display:flex;flex-direction:column;align-items:center;">
+    <div id="pub-p1" class="pub-pill" style="width:100%;background:#042651;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Feed</span></div>
+    <div id="pub-seg1" style="width:1.5px;height:30px;background:#042651;opacity:0;transition:opacity .3s ease;"></div>
+    <div style="width:100%;display:flex;flex-direction:column;gap:4px;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;" id="pub-p2">
+      <div style="background:#042651;height:53px;border-radius:24px 24px 0 0;display:flex;align-items:center;justify-content:center;"><span style="font-size:16px;color:#fff;white-space:nowrap;">News Room</span></div>
+      <div style="background:#042651;border:1px solid #0a1b35;height:53px;border-radius:0 0 24px 24px;display:flex;align-items:center;justify-content:center;"><span style="font-size:16px;color:#fff;white-space:nowrap;">News Room analytics</span></div>
+    </div>
+    <div id="pub-seg2" style="width:1.5px;height:30px;background:#042651;opacity:0;transition:opacity .3s ease;"></div>
+    <div id="pub-p3" class="pub-pill" style="width:100%;background:#042651;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Header Bidding</span></div>
+    <div id="pub-seg3" style="width:1.5px;height:30px;background:#042651;opacity:0;transition:opacity .3s ease;"></div>
+    <div id="pub-p4" class="pub-pill" style="width:100%;background:#042651;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Performance Hub</span></div>
+    <div id="pub-seg4" style="width:1.5px;height:30px;background:#042651;opacity:0;transition:opacity .3s ease;"></div>
+    <div id="pub-p5" class="pub-pill" style="width:100%;background:#042651;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Push</span></div>
+    <div id="pub-seg5" style="width:1.5px;height:30px;background:#042651;opacity:0;transition:opacity .3s ease;"></div>
+    <div id="pub-p6" class="pub-pill" style="width:100%;background:#042651;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;"><span style="font-size:16px;color:#fff;white-space:nowrap;">HP For you</span></div>
+  </div>
+</div>
+
+<!-- REALIZE COL: Figma x=909, y=229, w=297 -->
+<div class="N au" style="animation-delay:.68s;top:229px;left:909px;width:297px;display:flex;flex-direction:column;">
+  <div style="display:flex;flex-direction:column;">
+    <div style="background:#003d31;height:53px;border-radius:24px 24px 0 0;display:flex;align-items:center;justify-content:center;">
+      <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTA2IiBoZWlnaHQ9IjI2IiB2aWV3Qm94PSIwIDAgMTA2IDI2IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNOTguNDQxMyAyMC4wNzQzQzk4LjAwODIgMjAuOTUxNiA5Ny40ODI3IDIxLjcwODQgOTYuODY0OCAyMi4zNTA2Qzk2LjI3IDIyLjk5MjggOTUuNjExNyAyMy41MjYgOTQuODk1NiAyMy45NTA0Qzk0LjE3OTYgMjQuMzUxNyA5My40MjMxIDI0LjY2MTMgOTIuNjM3NyAyNC44NzM1QzkxLjg1MjQgMjUuMDg1NyA5MS4wNzI4IDI1LjE5NDYgOTAuMzEwNiAyNS4xOTQ2Qzg5LjA2OSAyNS4xOTQ2IDg3Ljg5NjcgMjQuOTcxIDg2Ljc5OTUgMjQuNTE4Qzg1LjcyNTQgMjQuMDQyMSA4NC43Nzg0IDIzLjQwNTYgODMuOTY0MSAyMi41OTcyQzgzLjE0OTkgMjEuNzg4NyA4Mi41MDg5IDIwLjg1NDEgODIuMDI5NiAxOS43ODc2QzgxLjU3MzQgMTguNjkyNCA4MS4zNDgzIDE3LjUzNDIgODEuMzQ4MyAxNi4zMDE0QzgxLjM0ODMgMTUuMDY4NiA4MS41NzM0IDEzLjkxNjEgODIuMDI5NiAxMi44NDk2QzgyLjUwODkgMTEuNzYwMiA4My4xNDk5IDEwLjgwODQgODMuOTY0MSA5Ljk5OTkyQzg0Ljc3ODQgOS4xOTE0NSA4NS43MTk3IDguNTY2NDcgODYuNzk5NSA4LjExMzQ5Qzg3Ljg5NjcgNy42Mzc1OCA4OS4wNjkgNy40MDI1IDkwLjMxMDYgNy40MDI1QzkxLjU1MjEgNy40MDI1IDkyLjcwMTMgNy42Mzc1OCA5My43NTIzIDguMTEzNDlDOTQuODAzMiA4LjU2NjQ3IDk1LjcwOTkgOS4xOTE0NSA5Ni40Nzc5IDkuOTk5OTJDOTcuMjQ1OSAxMC44MDg0IDk3Ljg0MDcgMTEuNzU0NSA5OC4yNjggMTIuODQ5NkM5OC43MDExIDEzLjkxNjEgOTguOTE0OCAxNS4wNjg2IDk4LjkxNDggMTYuMzAxNFYxNy4wMTI0Qzk4LjkxNDggMTcuMjI0NiA5OC44OTE3IDE3LjQ5OTggOTguODQ1NSAxNy44MzIzSDg1LjE4ODRDODUuMzA5NyAxOC4zMzEyIDg1LjUxMTggMTguODE4NiA4NS44MDA1IDE5LjI5NDVDODYuMTEyMyAxOS43NzA0IDg2LjQ4MiAyMC4xODMyIDg2LjkwOTMgMjAuNTM4N0M4Ny4zNjU1IDIwLjg5NDIgODcuODczNiAyMS4xOTI0IDg4LjQ1MTEgMjEuNDI3NUM4OS4wMjI4IDIxLjYzOTYgODkuNjQ2NCAyMS43NDg2IDkwLjMxNjMgMjEuNzQ4NkM5MS4xNzY3IDIxLjc0ODYgOTEuOTUwNSAyMS41OTM3IDkyLjY0MzUgMjEuMjg0MUM5My4zMzY0IDIwLjk3NDUgOTMuODYxOSAyMC41NzMxIDk0LjIyIDIwLjA3NDNIOTguNDUyOEg5OC40NDEzWk05NS4yMTMzIDE0LjgwNDlDOTUuMDkyIDE0LjMwNiA5NC44ODk4IDEzLjgxODcgOTQuNjAxMSAxMy4zNDI4Qzk0LjMzNTUgMTIuODY2OCA5NC4wMDYzIDEyLjQ1NCA5My41OTYzIDEyLjA5ODVDOTMuMTkyMSAxMS43MjAxIDkyLjcwMTIgMTEuNDIxOSA5Mi4xMjM4IDExLjIwOThDOTEuNTc1MiAxMC45NzQ3IDkwLjk2MzEgMTAuODU0MyA5MC4yOTMyIDEwLjg1NDNDODkuNjIzNCAxMC44NTQzIDg4Ljk5OTcgMTAuOTc0NyA4OC40MjggMTEuMjA5OEM4Ny44NTYzIDExLjQyMTkgODcuMzQyNCAxMS43MjAxIDg2Ljg4NjIgMTIuMDk4NUM4Ni40MyAxMi40NTQgODYuMDYwMyAxMi44NjY4IDg1Ljc3NzQgMTMuMzQyOEM4NS40OTQ0IDEzLjgxODcgODUuMjg2NiAxNC4zMDAzIDg1LjE2NTMgMTQuODA0OUg5NS4yMTMzWiIgZmlsbD0iI0M5RkY1QyIvPgo8cGF0aCBkPSJNNjEuMjIzIDQuNzMwNDJDNjEuODkyOSA0LjczMDQyIDYyLjQ1MyA0LjUwNjggNjIuOTA5MiA0LjA1MzgyQzYzLjM4ODUgMy41Nzc5MSA2My42MjUyIDMuMDEwMjcgNjMuNjI1MiAyLjM0NTE0QzYzLjYyNTIgMS42ODAwMSA2My4zODg1IDEuMTU4MjQgNjIuOTA5MiAwLjcxMDk5N0M2Mi40NTMgMC4yMzUwODggNjEuODkyOSAwIDYxLjIyMyAwQzYwLjU1MzIgMCA2MC4wMTYxIDAuMjM1MDg4IDU5LjUzNjggMC43MTA5OTdDNTkuMDgwNiAxLjE2Mzk3IDU4Ljg1NTMgMS43MDg2OCA1OC44NTUzIDIuMzQ1MTRDNTguODU1MyAyLjk4MTYgNTkuMDgwNiAzLjU3NzkxIDU5LjUzNjggNC4wNTM4MkM2MC4wMTYxIDQuNTA2OCA2MC41NzYzIDQuNzMwNDIgNjEuMjIzIDQuNzMwNDJaIiBmaWxsPSIjQzlGRjVDIi8+CjxwYXRoIGQ9Ik02My4yNjE2IDcuNzU3ODZINTkuMjEzNVYyNC44NDQ3SDYzLjI2MTZWNy43NTc4NloiIGZpbGw9IiNDOUZGNUMiLz4KPHBhdGggZD0iTTUxLjkzMTUgMjQuODQ0OFYwLjAwNTg0MDg5SDU1Ljk3OTVWMjQuODQ0OEg1MS45MzE1WiIgZmlsbD0iI0M5RkY1QyIvPgo8cGF0aCBkPSJNMzkuMTYzOSAyNS4yMDA0QzM3Ljk2ODYgMjUuMjAwNCAzNi44NDgzIDI0Ljk3NjggMzUuNzk3MyAyNC41MjM4QzM0Ljc0NjMgMjQuMDQ3OSAzMy44MjgxIDIzLjQxMTUgMzMuMDM3IDIyLjYwM0MzMi4yNDU5IDIxLjc5NDUgMzEuNjI4IDIwLjg1OTkgMzEuMTcxOCAxOS43OTM0QzMwLjcxNTYgMTguNjk4MyAzMC40OTA0IDE3LjU0IDMwLjQ5MDQgMTYuMzA3MkMzMC40OTA0IDE1LjA3NDUgMzAuNzE1NiAxMy45MjIgMzEuMTcxOCAxMi44NTU1QzMxLjYyOCAxMS43NjYxIDMyLjI0NTkgMTAuODE0MiAzMy4wMzcgMTAuMDA1OEMzMy44MjI0IDkuMTk3MjkgMzQuNzQ2MyA4LjU3MjMgMzUuNzk3MyA4LjExOTMzQzM2Ljg0ODMgNy42NDM0MiAzNy45Njg2IDcuNDA4MzQgMzkuMTYzOSA3LjQwODM0QzQwLjI4NDIgNy40MDgzNCA0MS4zMDA2IDcuNTk3NTUgNDIuMjEzIDcuOTc1OThDNDMuMTQyNyA4LjM1NDQyIDQzLjk2ODUgOC44NTMyNiA0NC42ODQ2IDkuNDcyNTJWNy43NjM4M0g0OC42OTc5VjI0Ljg1MDdINDQuNjg0NlYyMy4xNDJDNDMuOTY4NSAyMy43ODQyIDQzLjE0MjcgMjQuMjk0NSA0Mi4yMTMgMjQuNjcyOUM0MS4zMDY0IDI1LjAyODQgNDAuMjkgMjUuMjA2MiAzOS4xNjM5IDI1LjIwNjJWMjUuMjAwNFpNMzkuNTk3IDIxLjUzMDhDNDAuMzEzMSAyMS41MzA4IDQwLjk4MjkgMjEuMzk4OSA0MS42MDY2IDIxLjE0MDlDNDIuMjUzNCAyMC44NTQyIDQyLjgwMiAyMC40NzU3IDQzLjI1MjQgMTkuOTk5OEM0My43MzE3IDE5LjUwMSA0NC4xMDEzIDE4Ljk0NDggNDQuMzYxMSAxOC4zMjU2QzQ0LjYyNjggMTcuNjgzNCA0NC43NTM5IDE3LjAwNjggNDQuNzUzOSAxNi4yOTU4QzQ0Ljc1MzkgMTUuNTg0OCA0NC42MjEgMTQuOTE5NyA0NC4zNjExIDE0LjMwMDRDNDQuMDk1NSAxMy42NTgyIDQzLjcyNTkgMTMuMTAyIDQzLjI1MjQgMTIuNjI2MUM0Mi43OTYyIDEyLjEyNzMgNDIuMjQ3NiAxMS43NDg4IDQxLjYwNjYgMTEuNDg1MUM0MC45ODI5IDExLjE5ODQgNDAuMzEzMSAxMS4wNTUxIDM5LjU5NyAxMS4wNTUxQzM4Ljg4MSAxMS4wNTUxIDM4LjIxMTEgMTEuMTk4NCAzNy41ODc1IDExLjQ4NTFDMzYuOTYzOCAxMS43NDMxIDM2LjQxNTIgMTIuMTI3MyAzNS45NDE3IDEyLjYyNjFDMzUuNDYyNCAxMy4xMDIgMzUuMDkyOCAxMy42NTgyIDM0LjgzMjkgMTQuMzAwNEMzNC41NzMxIDE0LjkxOTcgMzQuNDQwMyAxNS41ODQ4IDM0LjQ0MDMgMTYuMjk1OEMzNC40NDAzIDE3LjAwNjggMzQuNTczMSAxNy42ODM0IDM0LjgzMjkgMTguMzI1NkMzNS4wOTg2IDE4Ljk0NDggMzUuNDU2NiAxOS41MDEgMzUuOTA3IDE5Ljk5OThDMzYuMzg2MyAyMC40NzU3IDM2LjkzNDkgMjAuODU0MiAzNy41NTI4IDIxLjE0MDlDMzguMTk5NSAyMS4zOTg5IDM4Ljg4MSAyMS41MzA4IDM5LjU5NyAyMS41MzA4WiIgZmlsbD0iI0M5RkY1QyIvPgo8cGF0aCBkPSJNMjguMzkzOCAyMC4wNzQzQzI3Ljk2MDcgMjAuOTUxNiAyNy40MzUyIDIxLjcwODQgMjYuODE3NCAyMi4zNTA2QzI2LjIyMjYgMjIuOTkyOCAyNS41NjQyIDIzLjUyNiAyNC44NDgyIDIzLjk1MDRDMjQuMTMyMSAyNC4zNTE3IDIzLjM3NTcgMjQuNjYxMyAyMi41OTAzIDI0Ljg3MzVDMjEuNzk5MiAyNS4wODU3IDIxLjAyNTQgMjUuMTk0NiAyMC4yNjMxIDI1LjE5NDZDMTkuMDIxNiAyNS4xOTQ2IDE3Ljg0OTMgMjQuOTcxIDE2Ljc1MjEgMjQuNTE4QzE1LjY3OCAyNC4wNDIxIDE0LjczMSAyMy40MDU2IDEzLjkyMjUgMjIuNTk3MkMxMy4xMDgzIDIxLjc4ODcgMTIuNDY3MyAyMC44NTQxIDExLjk4OCAxOS43ODc2QzExLjUzMTggMTguNjkyNCAxMS4zMDY2IDE3LjUzNDIgMTEuMzA2NiAxNi4zMDE0QzExLjMwNjYgMTUuMDY4NiAxMS41MzE4IDEzLjkxNjEgMTEuOTg4IDEyLjg0OTZDMTIuNDY3MyAxMS43NjAyIDEzLjEwODMgMTAuODA4NCAxMy45MjI1IDkuOTk5OTJDMTQuNzM2OCA5LjE5MTQ1IDE1LjY3OCA4LjU2NjQ3IDE2Ljc1MjEgOC4xMTM0OUMxNy44NTUxIDcuNjM3NTggMTkuMDIxNiA3LjQwMjUgMjAuMjYzMSA3LjQwMjVDMjEuNTA0NyA3LjQwMjUgMjIuNjUzOCA3LjYzNzU4IDIzLjcwNDggOC4xMTM0OUMyNC43NTU4IDguNTY2NDcgMjUuNjYyNSA5LjE5MTQ1IDI2LjQzMDUgOS45OTk5MkMyNy4xOTg1IDEwLjgwODQgMjcuNzkzMyAxMS43NTQ1IDI4LjIyMDYgMTIuODQ5NkMyOC42NTM3IDEzLjkxNjEgMjguODY3NCAxNS4wNjg2IDI4Ljg2NzQgMTYuMzAxNFYxNy4wMTI0QzI4Ljg2NzQgMTcuMjI0NiAyOC44NDQzIDE3LjQ5OTggMjguNzk4MSAxNy44MzIzSDE1LjE0MUMxNS4yNjIyIDE4LjMzMTIgMTUuNDY0MyAxOC44MTg2IDE1Ljc1MzEgMTkuMjk0NUMxNi4wNjQ5IDE5Ljc3MDQgMTYuNDM0NSAyMC4xODMyIDE2Ljg2MTggMjAuNTM4N0MxNy4zMTggMjAuODk0MiAxNy44MjYyIDIxLjE5MjQgMTguNDAzNyAyMS40Mjc1QzE4Ljk3NTQgMjEuNjM5NiAxOS41OTkgMjEuNzQ4NiAyMC4yNjg5IDIxLjc0ODZDMjEuMTI5MyAyMS43NDg2IDIxLjkwMzEgMjEuNTkzNyAyMi41OTYxIDIxLjI4NDFDMjMuMjg5MSAyMC45NzQ1IDIzLjgxNDUgMjAuNTczMSAyNC4xNzI2IDIwLjA3NDNIMjguNDA1NEgyOC4zOTM4Wk0yNS4xNzE2IDE0LjgwNDlDMjUuMDUwMyAxNC4zMDYgMjQuODQ4MiAxMy44MTg3IDI0LjU1OTQgMTMuMzQyOEMyNC4yOTM4IDEyLjg2NjggMjMuOTY0NiAxMi40NTQgMjMuNTU0NiAxMi4wOTg1QzIzLjE1MDQgMTEuNzIwMSAyMi42NTk2IDExLjQyMTkgMjIuMDgyMSAxMS4yMDk4QzIxLjUzMzYgMTAuOTc0NyAyMC45MjE0IDEwLjg1NDMgMjAuMjUxNSAxMC44NTQzQzE5LjU4MTcgMTAuODU0MyAxOC45NTggMTAuOTc0NyAxOC4zODYzIDExLjIwOThDMTcuODE0NiAxMS40MjE5IDE3LjMwMDcgMTEuNzIwMSAxNi44NDQ1IDEyLjA5ODVDMTYuMzg4MyAxMi40NTQgMTYuMDE4NyAxMi44NjY4IDE1LjczNTggMTMuMzQyOEMxNS40NDcgMTMuODE4NyAxNS4yNDQ5IDE0LjMwMDMgMTUuMTIzNiAxNC44MDQ5SDI1LjE3MTZaIiBmaWxsPSIjQzlGRjVDIi8+CjxwYXRoIGQ9Ik0xMDMuNjA5IDE0LjgwNDZDMTA0LjI2OCAxNC44MDQ2IDEwNC44MjggMTQuNTc1MyAxMDUuMjk2IDE0LjEyMjNDMTA1Ljc2MyAxMy42NjkzIDEwNiAxMy4xMTMxIDEwNiAxMi40NjUyQzEwNiAxMS44MTczIDEwNS43NjMgMTEuMjU1NCAxMDUuMjk2IDEwLjc5MDlDMTA0LjgyOCAxMC4zMjY1IDEwNC4yNjggMTAuMDkxNCAxMDMuNjA5IDEwLjA5MTRDMTAyLjk1MSAxMC4wOTE0IDEwMi4zOTcgMTAuMzI2NSAxMDEuOTQxIDEwLjc5MDlDMTAxLjQ4NCAxMS4yNTU0IDEwMS4yNTkgMTEuODExNSAxMDEuMjU5IDEyLjQ2NTJDMTAxLjI1OSAxMy4xMTg5IDEwMS40ODQgMTMuNjY5MyAxMDEuOTQxIDE0LjEyMjNDMTAyLjM5NyAxNC41NzUzIDEwMi45NTcgMTQuODA0NiAxMDMuNjA5IDE0LjgwNDZaIiBmaWxsPSIjQzlGRjVDIi8+CjxwYXRoIGQ9Ik0xMDMuNjA5IDE3LjgzMjJDMTAyLjk1MSAxNy44MzIyIDEwMi4zOTcgMTguMDY3MyAxMDEuOTQxIDE4LjUzMThDMTAxLjQ4NCAxOC45OTYyIDEwMS4yNTkgMTkuNTUyNCAxMDEuMjU5IDIwLjIwNjFDMTAxLjI1OSAyMC44NTk3IDEwMS40ODQgMjEuNDEwMiAxMDEuOTQxIDIxLjg2MzFDMTAyLjM5NyAyMi4zMTYxIDEwMi45NTcgMjIuNTQ1NSAxMDMuNjA5IDIyLjU0NTVDMTA0LjI2MiAyMi41NDU1IDEwNC44MjggMjIuMzE2MSAxMDUuMjk2IDIxLjg2MzFDMTA1Ljc2MyAyMS40MTAyIDEwNiAyMC44NTQgMTA2IDIwLjIwNjFDMTA2IDE5LjU1ODEgMTA1Ljc2MyAxOC45OTYyIDEwNS4yOTYgMTguNTMxOEMxMDQuODI4IDE4LjA2NzMgMTA0LjI2OCAxNy44MzIyIDEwMy42MDkgMTcuODMyMloiIGZpbGw9IiNDOUZGNUMiLz4KPHBhdGggZD0iTTguNDgyOTcgNy43NTc4NkM2LjIxOTI5IDcuNzU3ODYgNC4wODg0MyA4LjYzNTE0IDIuNDgzMDcgMTAuMjIzNEMwLjg4MzQ4MyAxMS44MTE3IDAgMTMuOTI3NSAwIDE2LjE4MDlWMjQuODQ0N0g0LjA0ODA1VjE2LjE4MDlDNC4wNDgwNSAxMy43NTU1IDYuMDM0NSAxMS43NzczIDguNDgyOTcgMTEuNzc3M0gxMC41MTU3VjcuNzU3ODZIOC40ODI5N1oiIGZpbGw9IiNDOUZGNUMiLz4KPHBhdGggZD0iTTY5LjY0ODQgMjQuODMzM0M2OC44OTc3IDI0LjgzMzMgNjguMjIyMSAyNC42NDk4IDY3LjYyNzMgMjQuMjgyOEM2Ny4wMzI1IDIzLjkxNTggNjYuNTUzMiAyMy40MjI3IDY2LjE5NTIgMjIuODAzNUM2NS44MzcxIDIyLjE4NDIgNjUuNjUyMyAyMS41MDE5IDY1LjY1MjMgMjAuNzUwOEM2NS42NTIzIDE5Ljk5OTYgNjUuODM3MSAxOS4zODA0IDY2LjIwMSAxOC43ODk4QzY2LjU2NDggMTguMTk5MiA2Ny4wNTU1IDE3LjY5NDYgNjcuNjU2MSAxNy4yODE4TDc0LjkyMDcgMTIuNDk0Qzc1LjA3NjYgMTIuNDEzOCA3NS4xNzQ4IDEyLjMyNzggNzUuMjE1MiAxMi4yMjQ1Qzc1LjI1NTYgMTIuMTI3MSA3NS4yNzI5IDEyLjAyOTYgNzUuMjcyOSAxMS45Mzc5Qzc1LjI3MjkgMTEuNzgzIDc1LjIxNTIgMTEuNjQ1NCA3NS4xMDU1IDExLjUzMDdDNzQuOTkgMTEuNDE2MSA3NC44NDU2IDExLjM1MyA3NC42NjY2IDExLjM1M0g2Ni40ODk3VjcuNzUyMTVINzUuOTEzOUM3Ni42NjQ2IDcuNzUyMTUgNzcuMzQwMyA3LjkzNTYzIDc3LjkyOTMgOC4zMDI2Qzc4LjUxODMgOC42Njk1NiA3OC45OTE4IDkuMTYyNjggNzkuMzU1NiA5Ljc4MTkzQzc5LjcxMzYgMTAuNDAxMiA3OS44OTg1IDExLjA4MzUgNzkuODk4NSAxMS44MzQ2Qzc5Ljg5ODUgMTIuNTg1OCA3OS43MTM2IDEzLjIwNSA3OS4zNDk4IDEzLjc5NTZDNzguOTg2IDE0LjM4NjIgNzguNDk1MiAxNC44OTA4IDc3Ljg5NDcgMTUuMzAzNkw3MC42NDc0IDIwLjA5MTRDNzAuNTE0NiAyMC4xNzE2IDcwLjQxNjQgMjAuMjU3NiA3MC4zNTg3IDIwLjM2MDlDNzAuMzAwOSAyMC40NTgzIDcwLjI3MjEgMjAuNTU1OCA3MC4yNzIxIDIwLjY0NzVDNzAuMjcyMSAyMC44MDI0IDcwLjMyOTggMjAuOTQgNzAuNDUxMSAyMS4wNTQ3QzcwLjU2NjYgMjEuMTY5MyA3MC43MTY3IDIxLjIzMjQgNzAuOTAxNSAyMS4yMzI0SDc5LjU1MlYyNC44MzMzSDY5LjY0ODRaIiBmaWxsPSIjQzlGRjVDIi8+Cjwvc3ZnPgo=" style="width:106px;height:25px;display:block;" alt="Realize"/>
+    </div>
+    <div style="border:1px solid #003d31;height:32px;display:flex;align-items:center;justify-content:center;"><span style="font-size:12px;color:#008f72;white-space:nowrap;">Shadow / Token Endorsed Brand</span></div>
+    <div onclick="openRealizePopup()" style="border:1px solid #6a8735;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;"><span style="font-size:12px;color:#c9ff5c;white-space:nowrap;">Design System- Shadow Endorsed</span></div>
+    <div onclick="openRealizePopup()" style="border:1px solid #6a8735;height:32px;border-radius:0 0 20px 20px;display:flex;align-items:center;justify-content:center;cursor:pointer;"><span style="font-size:12px;color:#c9ff5c;white-space:nowrap;">Design System- Token Endorsed</span></div>
+  </div>
+  <!-- Toggle button -->
+  <div id="rlz-toggle" onclick="toggleRealize()" style="display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;margin-top:8px;">
+    <div id="rlz-circle" style="width:24px;height:24px;border-radius:50%;border:1.5px solid #3dffc0;display:flex;align-items:center;justify-content:center;transition:transform .35s cubic-bezier(.34,1.56,.64,1),border-color .25s;">
+      <svg id="rlz-plus" width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="8" y1="3" x2="8" y2="13" stroke="#3dffc0" stroke-width="1.8" stroke-linecap="round"/><line x1="3" y1="8" x2="13" y2="8" stroke="#3dffc0" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+  <!-- Expanding pills overlay (absolute, doesn't push anything) -->
+  <div id="rlz-expand" style="position:absolute;top:195px;left:0;width:297px;display:flex;flex-direction:column;align-items:center;">
+    <div id="rlz-p1" class="rlz-pill" style="width:100%;background:#003d31;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Realize+</span></div>
+    <div id="rlz-seg1" style="width:1.5px;height:30px;background:#003D31;opacity:0;transition:opacity .3s ease;"></div>
+    <div id="rlz-p2" class="rlz-pill" style="width:100%;background:#003d31;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Abby</span></div>
+    <div id="rlz-seg2" style="width:1.5px;height:30px;background:#003D31;opacity:0;transition:opacity .3s ease;"></div>
+    <div id="rlz-p3" class="rlz-pill" style="width:100%;background:#003d31;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Maximum Conversion</span></div>
+    <div id="rlz-seg3" style="width:1.5px;height:30px;background:#003D31;opacity:0;transition:opacity .3s ease;"></div>
+    <div id="rlz-p4" class="rlz-pill" style="width:100%;background:#003d31;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(10px);transition:opacity .3s ease,transform .3s ease;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Realize Gen Ai Maker</span></div>
+  </div>
+</div>
+
+<!-- SHOP YOU LIKES: Figma x=1247, y=229, w=193 -->
+<div class="N au" style="animation-delay:.74s;top:229px;left:1247px;width:193px;display:flex;flex-direction:column;">
+  <div style="background:#003d31;height:53px;border-radius:24px 24px 0 0;display:flex;align-items:center;justify-content:center;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Shop you likes</span></div>
+  <div style="border:1px solid #003d31;height:32px;border-radius:0 0 20px 20px;display:flex;align-items:center;justify-content:center;"><span style="font-size:12px;color:#008f72;white-space:nowrap;">Endorsed Brand</span></div>
+</div>
+
+<!-- SKIMLINKS: Figma x=1481, y=229, w=193 -->
+<div class="N au" style="animation-delay:.80s;top:229px;left:1481px;width:193px;display:flex;flex-direction:column;">
+  <div style="background:#003d31;height:53px;border-radius:24px 24px 0 0;display:flex;align-items:center;justify-content:center;"><span style="font-size:16px;color:#fff;white-space:nowrap;">Skimlinks</span></div>
+  <div style="border:1px solid #003d31;height:32px;border-radius:0 0 20px 20px;display:flex;align-items:center;justify-content:center;"><span style="font-size:12px;color:#008f72;white-space:nowrap;">Endorsed Brand</span></div>
+</div>
+
+<!-- DATA SIGNAL MOAT: marching ants + glow -->
+<div class="N au" id="moat" style="animation-delay:1.1s;top:995px;left:45px;width:1629px;height:53px;border-radius:80px;display:flex;align-items:center;justify-content:center;">
+  <svg id="moat-svg" viewBox="0 0 1629 53" preserveAspectRatio="none">
+    <rect x="1.25" y="1.25" width="1626.5" height="50.5" rx="26.5" ry="26.5"/>
+  </svg>
+  <span style="font-size:16px;color:#fff;white-space:nowrap;position:relative;z-index:1;">The Data Signal Moat</span>
+</div>
+
+</div>
+
+<script>
+// JS only sets the scale — positioning is handled purely by CSS
+function fit() {
+  const W = 1728, H = 1117;
+  const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+  const el = document.getElementById('C');
+  el.style.setProperty('--s', s);
+  el.style.setProperty('--tx', ((window.innerWidth - W * s) / 2) + 'px');
+  el.style.setProperty('--ty', ((window.innerHeight - H * s) / 2) + 'px');
+}
+fit();
+window.addEventListener('resize', fit);
+
+// Realize sequential reveal
+var rlzOpen = false;
+var rlzTimers = [];
+function toggleRealize() {
+  rlzOpen = !rlzOpen;
+  var circle = document.getElementById('rlz-circle');
+  var plus   = document.getElementById('rlz-plus');
+  var pills  = ['rlz-p1','rlz-p2','rlz-p3','rlz-p4'];
+
+  // Clear any running timers
+  rlzTimers.forEach(function(t){ clearTimeout(t); });
+  rlzTimers = [];
+
+  var segs = ['rlz-seg1','rlz-seg2','rlz-seg3'];
+
+  if (rlzOpen) {
+    circle.style.transform   = 'rotate(45deg)';
+    circle.style.borderColor = '#c9ff5c';
+    plus.querySelectorAll('line').forEach(function(l){ l.setAttribute('stroke','#c9ff5c'); });
+
+    // Reveal pills one by one with line segments between them
+    pills.forEach(function(id, i) {
+      var t = setTimeout(function() {
+        var el = document.getElementById(id);
+        el.style.opacity   = '1';
+        el.style.transform = 'translateY(0)';
+        // Show the segment before this pill (except first)
+        if (i > 0) document.getElementById(segs[i-1]).style.opacity = '1';
+      }, 150 + i * 180);
+      rlzTimers.push(t);
+    });
+
+  } else {
+    circle.style.transform   = 'rotate(0deg)';
+    circle.style.borderColor = '#3dffc0';
+    plus.querySelectorAll('line').forEach(function(l){ l.setAttribute('stroke','#3dffc0'); });
+
+    // Hide pills and segments in reverse
+    pills.slice().reverse().forEach(function(id, i) {
+      var t = setTimeout(function() {
+        var el = document.getElementById(id);
+        el.style.opacity   = '0';
+        el.style.transform = 'translateY(10px)';
+      }, i * 80);
+      rlzTimers.push(t);
+    });
+    segs.forEach(function(id) {
+      var t = setTimeout(function() {
+        document.getElementById(id).style.opacity = '0';
+      }, 200);
+      rlzTimers.push(t);
+    });
+  }
+}
+
+// Publisher sequential reveal
+var pubOpen = false;
+var pubTimers = [];
+function togglePublisher() {
+  pubOpen = !pubOpen;
+  var circle = document.getElementById('pub-circle');
+  var plus   = document.getElementById('pub-plus');
+  var pills  = ['pub-p1','pub-p2','pub-p3','pub-p4','pub-p5','pub-p6'];
+  var segs   = ['pub-seg1','pub-seg2','pub-seg3','pub-seg4','pub-seg5'];
+
+  pubTimers.forEach(function(t){ clearTimeout(t); });
+  pubTimers = [];
+
+  if (pubOpen) {
+    circle.style.transform   = 'rotate(45deg)';
+    circle.style.borderColor = '#6880ff';
+    plus.querySelectorAll('line').forEach(function(l){ l.setAttribute('stroke','#6880ff'); });
+
+    pills.forEach(function(id, i) {
+      var t = setTimeout(function() {
+        var el = document.getElementById(id);
+        el.style.opacity   = '1';
+        el.style.transform = 'translateY(0)';
+        if (i > 0) document.getElementById(segs[i-1]).style.opacity = '1';
+      }, 150 + i * 150);
+      pubTimers.push(t);
+    });
+
+  } else {
+    circle.style.transform   = 'rotate(0deg)';
+    circle.style.borderColor = '#6880ff';
+    plus.querySelectorAll('line').forEach(function(l){ l.setAttribute('stroke','#6880ff'); });
+
+    pills.slice().reverse().forEach(function(id, i) {
+      var t = setTimeout(function() {
+        var el = document.getElementById(id);
+        el.style.opacity   = '0';
+        el.style.transform = 'translateY(10px)';
+      }, i * 60);
+      pubTimers.push(t);
+    });
+    segs.forEach(function(id) {
+      var t = setTimeout(function() {
+        document.getElementById(id).style.opacity = '0';
+      }, 150);
+      pubTimers.push(t);
+    });
+  }
+}
+
+function enterChart() {
+  document.getElementById('entry').classList.add('hidden');
+  // Start chart animations after entry screen begins fading
+  setTimeout(function() {
+    document.getElementById('C').classList.add('animate');
+  }, 300);
+}
+
+function openRealizePopup() {
+  document.getElementById('realize-modal').classList.add('open');
+}
+function closeRealizePopup() {
+  var img = document.getElementById('realize-modal-img');
+  img.style.opacity = '0';
+  img.style.transform = 'scale(.92)';
+  setTimeout(function() {
+    document.getElementById('realize-modal').classList.remove('open');
+    img.style.opacity = '';
+    img.style.transform = '';
+  }, 250);
+}
+</script>
+
+<div id="realize-modal">
+  <div id="realize-modal-bg" onclick="closeRealizePopup()"></div>
+  <img id="realize-modal-img" src="realizePop.png" alt="Realize Design System" onclick="event.stopPropagation()"/>
+</div>
+
+</body>
+</html>
