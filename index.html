@@ -7,7 +7,32 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;background:#090f19;}
+:root{--bg:#090f19;--bg-panel:#090f19;--center-line:#042651;--moat-bg:#090f19;--moat-stroke:#17529d;--design-sys-bg:#090f19;--entry-bg:#050a14;}
+body.light{--bg:#f0f2f5;--bg-panel:#f0f2f5;--center-line:#b0c4de;--moat-bg:#f0f2f5;--moat-stroke:#6a9fd8;--design-sys-bg:#f0f2f5;--entry-bg:#e8ecf1;--moat-text:#1a1a2e;--label-pub:#3a5aa8;--label-adv:#006b5a;}
+body.light .N span[style*="color:#c9ff5c"]{color:#008f72 !important;}
+body.light .N div[style*="border:1px solid #c9ff5c"]{border-color:#008f72 !important;}
+body.light .N div[style*="border:1px solid #6a8735"]{border-color:#008f72 !important;}
+body.light #rlz-circle{border-color:#008f72 !important;}
+body.light #rlz-plus line{stroke:#008f72 !important;}
+body.light #moat span{color:var(--moat-text) !important;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);}
+
+/* Top-right controls */
+#top-controls{position:fixed;top:16px;right:16px;z-index:9000;display:flex;align-items:center;gap:12px;}
+#brand-system-btn{font-family:'Poppins',sans-serif;font-weight:600;font-size:13px;color:#fff;background:transparent;border:1.5px solid rgba(255,255,255,.25);padding:10px 24px;border-radius:80px;cursor:pointer;transition:all .3s ease;text-decoration:none;white-space:nowrap;}
+#brand-system-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.5);}
+body.light #brand-system-btn{color:#1a1a2e;border-color:rgba(0,0,0,.2);}
+body.light #brand-system-btn:hover{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.4);}
+
+/* Theme toggle */
+#theme-toggle{width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s ease;backdrop-filter:blur(8px);}
+#theme-toggle:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35);}
+body.light #theme-toggle{border-color:rgba(0,0,0,.15);background:rgba(0,0,0,.05);}
+body.light #theme-toggle:hover{background:rgba(0,0,0,.1);}
+#theme-toggle .sun{display:none;}
+#theme-toggle .moon{display:block;}
+body.light #theme-toggle .sun{display:block;}
+body.light #theme-toggle .moon{display:none;}
 
 /* ── Entry Screen ── */
 #entry{position:fixed;inset:0;z-index:10000;background:#050a14;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s ease,visibility .8s ease;}
@@ -66,9 +91,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#090f19;}
   transform:translate(var(--tx),var(--ty)) scale(var(--s));
 }
 
-#bg-l{position:absolute;top:0;left:0;width:864px;height:1117px;background:#090f19;}
-#bg-r{position:absolute;top:0;left:864px;width:864px;height:1117px;background:#090f19;}
-#center-line{position:absolute;left:50%;top:77px;width:2px;height:885px;background:#042651;transform:translateX(-50%);z-index:0;}
+#bg-l{position:absolute;top:0;left:0;width:864px;height:1117px;background:var(--bg-panel);}
+#bg-r{position:absolute;top:0;left:864px;width:864px;height:1117px;background:var(--bg-panel);}
+#center-line{position:absolute;left:50%;top:77px;width:2px;height:885px;background:var(--center-line);transform:translateX(-50%);z-index:0;}
 #SV{position:absolute;inset:0;width:1728px;height:1117px;z-index:1;pointer-events:none;}
 .N{position:absolute;z-index:2;font-family:'Poppins',sans-serif;font-weight:600;}
 
@@ -84,13 +109,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#090f19;}
 }
 #moat-svg{position:absolute;inset:-2px;width:calc(100% + 4px);height:calc(100% + 4px);pointer-events:none;overflow:visible;}
 #moat-svg rect{
-  fill:none;stroke:#17529d;stroke-width:1;
+  fill:none;stroke:var(--moat-stroke);stroke-width:1;
   stroke-dasharray:14 6;stroke-dashoffset:0;
   animation:march .55s linear infinite;
 }
 #moat{
   position:absolute;
-  background:#090f19;
+  background:var(--moat-bg);
   animation: pulse-glow 3s ease-in-out infinite, fadeUp .55s cubic-bezier(.22,1,.36,1) forwards;
   animation-delay: 1.1s, 1.1s;
 }
@@ -113,6 +138,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#090f19;}
 </style>
 </head>
 <body>
+
+<!-- Top Controls -->
+<div id="top-controls">
+  <a id="brand-system-btn" href="https://www.figma.com/design/ufrJPFax2cvYDqAagnusKh/Realize?node-id=2250-5477&t=dizfcUhScl4uE9PX-1" target="_blank">Brand System</a>
+  <button id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+    <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/></svg>
+    <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1a2e" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  </button>
+</div>
 
 <!-- Entry Screen -->
 <div id="entry">
@@ -155,14 +189,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#090f19;}
 </div>
 
 <!-- DESIGN SYSTEM: Figma x=103.5, y=241, w=136, h=32 -->
-<div class="N au" style="animation-delay:.48s;top:241px;left:103.5px;width:136px;height:32px;background:#090f19;border:1px solid #c9ff5c;border-radius:80px;display:flex;align-items:center;justify-content:center;">
+<div class="N au" style="animation-delay:.48s;top:241px;left:103.5px;width:136px;height:32px;background:var(--design-sys-bg);border:1px solid #c9ff5c;border-radius:80px;display:flex;align-items:center;justify-content:center;">
   <span style="font-size:12px;color:#c9ff5c;white-space:nowrap;">Design System</span>
 </div>
 
 <!-- DEEPERDIVE: Figma x=45, y=320, w=252, h=85 -->
 <div class="N au" style="animation-delay:.56s;top:320px;left:45px;width:252px;display:flex;flex-direction:column;">
   <div style="background:#042651;height:53px;border-radius:24px 24px 0 0;display:flex;align-items:center;justify-content:center;"><img src="DeeperDive.svg" alt="DeeperDive" style="height:22px;display:block;"/></div>
-  <div style="background:#090f19;border:1px solid #042651;height:32px;border-radius:0 0 20px 20px;display:flex;align-items:center;justify-content:center;"><span style="font-size:12px;color:#78aced;white-space:nowrap;">Endorsed Brand</span></div>
+  <div style="background:var(--bg);border:1px solid #042651;height:32px;border-radius:0 0 20px 20px;display:flex;align-items:center;justify-content:center;"><span style="font-size:12px;color:#78aced;white-space:nowrap;">Endorsed Brand</span></div>
 </div>
 
 <!-- PUBLISHER COL: Figma x=423, y=229, w=297 -->
@@ -223,7 +257,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#090f19;}
 
 <!-- SHOP YOU LIKES: Figma x=1247, y=229, w=193 -->
 <div class="N au" style="animation-delay:.74s;top:229px;left:1247px;width:193px;display:flex;flex-direction:column;">
-  <div style="background:#003d31;height:53px;border-radius:24px 24px 0 0;display:flex;align-items:center;justify-content:center;"><img src="shopYoulikes.png" alt="Shop Your Likes" style="height:28px;display:block;"/></div>
+  <div style="background:#003d31;height:53px;border-radius:24px 24px 0 0;display:flex;align-items:center;justify-content:center;"><img src="SYL_Logo_Linear_Classic-Blue-Red2024-1-1024x215.png" alt="Shop Your Likes" style="height:28px;display:block;"/></div>
   <div style="border:1px solid #003d31;height:32px;border-radius:0 0 20px 20px;display:flex;align-items:center;justify-content:center;"><span style="font-size:12px;color:#008f72;white-space:nowrap;">Endorsed Brand</span></div>
 </div>
 
@@ -244,6 +278,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#090f19;}
 </div>
 
 <script>
+// Theme toggle
+function toggleTheme() {
+  document.body.classList.toggle('light');
+  localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+}
+// Theme is restored when entering the chart, not on page load
+
 // JS only sets the scale — positioning is handled purely by CSS
 function fit() {
   const W = 1728, H = 1117;
@@ -363,8 +404,9 @@ function togglePublisher() {
 
 function enterChart() {
   document.getElementById('entry').classList.add('hidden');
-  // Start chart animations after entry screen begins fading
+  // Restore saved theme and start chart animations
   setTimeout(function() {
+    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
     document.getElementById('C').classList.add('animate');
   }, 300);
 }
